@@ -40,3 +40,5 @@ def logoutUser(request):
 def room(request, username):
     if User.objects.filter(username=username).exists():
         return render(request, "chat/room.html", {'username':username})
+    
+    return redirect('index')
