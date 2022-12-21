@@ -5,4 +5,5 @@ urlpatterns = [
     path('logout/',views.logoutUser, name='logout'),
     path('register/',views.register, name='register'),
     path('index/', views.index, name='index'),
+    path("<str:room_name>/", views.room, name="room")
 ]

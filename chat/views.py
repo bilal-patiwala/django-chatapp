@@ -36,3 +36,7 @@ def loginUser(request):
 def logoutUser(request):
     logout(request)
     return redirect('login')
+
+def room(request, username):
+    if User.objects.filter(username=username).exists():
+        return render(request, "chat/room.html", {'username':username})
