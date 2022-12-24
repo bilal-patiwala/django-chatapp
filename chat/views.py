@@ -2,6 +2,7 @@ from django.shortcuts import redirect, render
 from django.contrib.auth.models import User
 from django.contrib import messages
 from django.contrib.auth import authenticate, login, logout
+from .models import Message
 
 # Create your views here.
 def index(request):
@@ -38,7 +39,15 @@ def logoutUser(request):
     return redirect('login')
 
 def room(request, username):
-    if User.objects.filter(username=username).exists():
-        return render(request, "chat/room.html", {'username':username})
-    
-    return redirect('index')
+    try:
+        receiver = User.objects.get(username=username)
+        # message = request.POST.get('message')
+        # sender = request.user
+        # if request.method == 'POST':
+        #     newMessage = Message.objects.create(message=message, sender=sender, receiver=receiver)
+        #     newMessage.save()
+            
+    except User.DoesNotExist:
+        return redirect('index')
+
+    return render(request, "chat/room.html", {'username':username})
