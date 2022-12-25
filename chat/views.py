@@ -39,6 +39,7 @@ def logoutUser(request):
     return redirect('login')
 
 def room(request, username):
+    sender = request.user
     try:
         receiver = User.objects.get(username=username)
         # message = request.POST.get('message')
@@ -50,4 +51,4 @@ def room(request, username):
     except User.DoesNotExist:
         return redirect('index')
 
-    return render(request, "chat/room.html", {'username':username})
+    return render(request, "chat/room.html", {'username':username, 'sender':sender.username})

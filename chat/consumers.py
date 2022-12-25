@@ -2,37 +2,82 @@ import json
 
 from asgiref.sync import async_to_sync
 from channels.generic.websocket import AsyncWebsocketConsumer
+from channels.db import database_sync_to_async
+from django.contrib.auth import get_user_model
+
+User = get_user_model()
 
 class ChatConsumer(AsyncWebsocketConsumer):
     async def connect(self):
-        self.user = self.scope["user"]
-        self.username = self.scope["url_route"]["kwargs"]["username"]
-        self.room_group_name = "chat_%s" % self.username
-
-        # Join room group
-        await self.channel_layer.group_add(self.room_group_name, self.channel_name)
-
+        user  = self.scope['user']
+        chat_room = f'chat_room{user.id}'
+        self.chat_room = chat_room
+        await self.channel_layer.group_add(self.chat_room, self.channel_name)
         await self.accept()
 
-    async def disconnect(self, close_code):
-        # Leave room group
-        await self.channel_layer.group_discard(self.room_group_name, self.channel_name)
+    async def receive(self, text_data=None):
+        received_data = json.loads(text_data)
+        message = received_data['message']
+        sender_username = received_data['sender']
+        receiver_username = received_data['receiver']
+        if not message:
+            return False
 
-    # Receive message from WebSocket
-    async def receive(self, text_data):
-        text_data_json = json.loads(text_data)
-        message = text_data_json["message"]
+        sender = await self.get_user_object(sender_username)
+        receiver = await self.get_user_object(receiver_username)
 
-        # Send message to room group
+        if not sender:
+            print("error sender not found")
+
+        if not receiver:
+            print("error receiver not found")
+
+        receiver_chat_room = f'chat_room{receiver.id}'
+        self_user = self.scope['user']
+
+        response = {
+            'message':message,
+            'sender':self_user.username,
+        }
+
         await self.channel_layer.group_send(
-            self.room_group_name, {"type": "chat_message", "message": message}
+            receiver_chat_room,
+            {
+                'type':'chat_message',
+                'text':json.dumps(response)
+            }
         )
 
-    # Receive message from room group
-    async def chat_message(self, event):
-        message = event["message"]
 
-        # Send message to WebSocket
-        await self.send(text_data=json.dumps({"message": message}))
+        await self.channel_layer.group_send(
+            self.chat_room,
+            {
+                'type':'chat_message',
+                'text':json.dumps(response)
+            }
+        )
+
+        # await self.send(json.dumps({
+        #     'type':'websocket.send',
+        #     'text':response
+        # }))
+
+    async def disconnect(self, code):
+        pass
+
+    async def chat_message(self, event):
+        message = event["text"]
+
+        await self.send(json.dumps({"text": message}))
+
+    @database_sync_to_async
+    def get_user_object(self,username):
+        user = User.objects.filter(username=username)
+        if user.exists():
+            return user.first()
+        else:
+            return None
+
+    
 
     
