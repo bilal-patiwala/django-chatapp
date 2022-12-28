@@ -2,7 +2,7 @@ from django.shortcuts import redirect, render
 from django.contrib.auth.models import User
 from django.contrib import messages
 from django.contrib.auth import authenticate, login, logout
-from .models import Message
+from .models import Message, Thread
 
 # Create your views here.
 def index(request):
@@ -40,15 +40,29 @@ def logoutUser(request):
 
 def room(request, username):
     sender = request.user
+    thread = Thread.objects.get_by_user(user=sender).prefetch_related('message_thread')
     try:
         receiver = User.objects.get(username=username)
-        # message = request.POST.get('message')
-        # sender = request.user
-        # if request.method == 'POST':
-        #     newMessage = Message.objects.create(message=message, sender=sender, receiver=receiver)
-        #     newMessage.save()
             
     except User.DoesNotExist:
         return redirect('index')
 
-    return render(request, "chat/room.html", {'username':username, 'sender':sender.username})
+    if thread.exists():
+        context = {
+            'username':username,
+            'sender':sender.username,
+            'thread_id':thread.first().id,
+            'thread':thread
+        }
+    else:
+        new_thread = Thread.objects.create(sender=sender, receiver=receiver)
+        new_thread.save()
+        t = Thread.objects.get_by_user(user=sender).prefetch_related('message_thread')
+        context = {
+            'username':username,
+            'sender':sender.username,
+            'thread_id':t.first().id,
+            'thread':t
+        }
+
+    return render(request, "chat/room.html", context)

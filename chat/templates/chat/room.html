@@ -11,11 +11,14 @@
     <input id="chat-message-submit" type="button" value="Send" />
     {{ username|json_script:"username" }}
     {{sender|json_script:"sender"}}
+    {{thread_id|json_script:"thread_id"}}
+    {{thread|json_script:"thread"}}
     <script>
       const username = JSON.parse(
         document.getElementById("username").textContent
       );
       const sender = JSON.parse(document.getElementById("sender").textContent)
+      const thread_id = JSON.parse(document.getElementById("thread_id").textContent)
       let chatSocket = new WebSocket(
         "ws://" + window.location.host + "/ws/chat/" + username + "/"
       );
@@ -44,7 +47,8 @@
         let data = {
           message: message, 
           'sender':sender,
-          'receiver':username
+          'receiver':username,
+          'thread_id':thread_id
         };
         data = JSON.stringify(data);
         chatSocket.send(data);

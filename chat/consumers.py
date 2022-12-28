@@ -4,6 +4,7 @@ from asgiref.sync import async_to_sync
 from channels.generic.websocket import AsyncWebsocketConsumer
 from channels.db import database_sync_to_async
 from django.contrib.auth import get_user_model
+from .models import Thread, Message
 
 User = get_user_model()
 
@@ -20,11 +21,13 @@ class ChatConsumer(AsyncWebsocketConsumer):
         message = received_data['message']
         sender_username = received_data['sender']
         receiver_username = received_data['receiver']
+        thread_id = received_data['thread_id']
         if not message:
             return False
 
         sender = await self.get_user_object(sender_username)
         receiver = await self.get_user_object(receiver_username)
+        thread_obj = await self.get_thread(thread_id)
 
         if not sender:
             print("error sender not found")
@@ -32,12 +35,18 @@ class ChatConsumer(AsyncWebsocketConsumer):
         if not receiver:
             print("error receiver not found")
 
+        if not thread_obj:
+            print("error thread obj not found")
+
+        await self.createMessage(thread_obj, sender, message)
+
         receiver_chat_room = f'chat_room{receiver.id}'
         self_user = self.scope['user']
 
         response = {
             'message':message,
             'sender':self_user.username,
+            'thread_id':thread_id
         }
 
         await self.channel_layer.group_send(
@@ -78,6 +87,18 @@ class ChatConsumer(AsyncWebsocketConsumer):
         else:
             return None
 
-    
+    @database_sync_to_async
+    def get_thread(self, thread_id):
+        thread = Thread.objects.filter(id=thread_id)
+        if thread.exists():
+            obj = thread.first()
+        else:
+            obj = None
+        
+        return obj
+
+    @database_sync_to_async
+    def createMessage(self, thread, user, msg):
+        Message.objects.create(message=msg, user=user, thread=thread)
 
     
