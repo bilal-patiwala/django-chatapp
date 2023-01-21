@@ -3,6 +3,7 @@ from django.contrib.auth.models import User
 from django.contrib import messages
 from django.contrib.auth import authenticate, login, logout
 from .models import Message, Thread
+from rest_framework.decorators import api_view
 
 # Create your views here.
 def index(request):
@@ -66,3 +67,9 @@ def room(request, username):
         }
 
     return render(request, "chat/room.html", context)
+
+# @api_view(['POST'])
+# def login(request):
+#     data = request.data
+#     username = data.username
+#     password = data.password
