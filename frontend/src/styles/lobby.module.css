@@ -1,0 +1,21 @@
+.header{
+    width: 100%;
+    height: auto;
+    background-color: #343A46;
+    padding: 10px;
+}
+
+.user-image{
+    width:40px ;
+}
+
+.search-icon{
+    width: 35px;
+}
+
+.for-search{
+    display: flex;
+    flex-direction: column;
+    background-color: #343A46;
+    margin:1rem;
+}

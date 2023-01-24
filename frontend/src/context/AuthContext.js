@@ -6,8 +6,8 @@ const AuthContext = createContext("")
 export default AuthContext
 
 export const AuthProvider = ({children}) => {
-    let [authToken, setAuthToken] = useState(() => localStorage.getItem('authToken')?JSON.parse(localStorage.getItem('authToken')):null)
-    let  [user, setUser] = useState(() =>localStorage.getItem('authToken')?jwt_decode(localStorage.getItem('authToken')):null)
+    let [authToken, setAuthToken] = useState(()=> localStorage.getItem('authToken') ? JSON.parse(localStorage.getItem('authToken')) : null)
+    let  [user, setUser] = useState(()=> localStorage.getItem('authToken') ? jwt_decode(localStorage.getItem('authToken')) : null)
     let navigate = useNavigate()
     let [loading, setLoading] = useState(true)
 
@@ -128,10 +128,10 @@ export const AuthProvider = ({children}) => {
     },[authToken, loading])
 
     let contextData= {
-        user,
-        loginUser,
-        logout,
-        signupUser
+        user:user,
+        loginUser:loginUser,
+        logout:logout,
+        signupUser:signupUser
     }
     return(
         <AuthContext.Provider value={contextData}>
