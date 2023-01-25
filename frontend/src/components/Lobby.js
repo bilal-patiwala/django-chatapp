@@ -32,6 +32,12 @@ const Lobby = () => {
         setSearch(event.target.value)
     }
 
+    const selectButton = (event) => {
+      selectedUser(event)
+      setSearch("")
+      setSearchedUser([])
+    }
+
   return (
     <div className="w-1/4 border-r-2 h-screen border-[#374151] ">
       {/* header */}
@@ -55,7 +61,7 @@ const Lobby = () => {
 
       <div className={styles['for-search']}>
         {searchedUser.map((user,index) => (
-            <button value={user.username} key={index} className='border-b-2 border-[#374151] text-xl p-2' onClick={selectedUser}>{user.username}</button>
+            <button value={user.username} key={index} className='border-b-2 border-[#374151] text-xl p-2' onClick={selectButton}>{user.username}</button>
         ))}
       </div>
 

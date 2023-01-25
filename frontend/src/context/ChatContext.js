@@ -5,6 +5,7 @@ const ChatContext = createContext()
 export const ChatProvider = ({children}) => {
     let [receiver, setReceiver] = useState('')
     const selectedUser = (event) => {
+        event.preventDefault()
         setReceiver(event.target.value)
     }
 
