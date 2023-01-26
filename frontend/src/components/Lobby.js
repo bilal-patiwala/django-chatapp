@@ -3,8 +3,9 @@ import styles from "../styles/lobby.module.css";
 import { ReactComponent as User } from "../assets/user.svg";
 import {ReactComponent as Search} from '../assets/search.svg'
 import ChatContext from "../context/ChatContext";
+import AuthContext from "../context/AuthContext";
 const Lobby = () => {
-
+    let {user, authToken} = useContext(AuthContext)
     let [search, setSearch] = useState('');
     let [searchedUser, setSearchedUser] = useState([])
     let {selectedUser} = useContext(ChatContext)
@@ -21,6 +22,9 @@ const Lobby = () => {
     const searching = async () => {
         let response = await fetch(`http://127.0.0.1:8000/searchUser/${search}`,{
             method:'GET',
+            headers:{
+              'AUTHORIZATION':`Bearer ${localStorage.getItem('authToken')}`,
+            }
         })
 
         let data = await response.json()

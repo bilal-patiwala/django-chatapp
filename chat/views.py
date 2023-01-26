@@ -3,12 +3,19 @@ from django.contrib.auth.models import User
 from django.contrib import messages
 from django.contrib.auth import authenticate, login, logout
 from .models import Message, Thread
-from rest_framework.decorators import api_view
+from rest_framework.decorators import api_view, permission_classes, authentication_classes
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from rest_framework_simplejwt.views import TokenObtainPairView
-from .serializers import RegisterSerializer, SearchSerializer
+from .serializers import RegisterSerializer, SearchSerializer, ThreadSerializer, UserProfileSerializer
 from rest_framework.response import Response
 from rest_framework import status
+from django.contrib.auth import get_user_model
+from rest_framework_simplejwt.authentication import JWTAuthentication, default_user_authentication_rule
+from rest_framework.permissions import IsAuthenticated, AllowAny
+from rest_framework.views import APIView
+User = get_user_model()
+
+
 
 class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
     @classmethod
@@ -17,6 +24,7 @@ class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
 
         # Add custom claims
         token['username'] = user.username
+        token['USER_ID_FIELD'] = user.id
         # ...
 
         return token
@@ -92,7 +100,48 @@ def room(request, username):
 #     password = data.password
 
 @api_view(['GET'])
+@permission_classes((AllowAny, ))
+@authentication_classes([JWTAuthentication])
 def searchUser(request, searchText):
     querySet = User.objects.filter(username__startswith=searchText)[:5]
     serializer = SearchSerializer(querySet, many=True)
     return Response(serializer.data)
+
+@api_view(['GET'])
+@permission_classes((AllowAny, ))
+def getThread(request, username):
+    token = request.headers.get('AUTHORIZATION').split()
+    print(token[1])
+    sender = JWTAuthentication.get_user(JWTAuthentication,token[1])
+    print(sender)
+    thread = Thread.objects.get_by_user(user=sender).prefetch_related('message_thread')
+    receiver = User.objects.get(username=username)
+    if thread.exists():
+        context = {
+            'username':username,
+            'sender':sender.username,
+            'thread_id':thread.first().id,
+            'thread':thread
+        }
+    else:
+        print("1..")
+        new_thread = Thread.objects.create(sender=sender, receiver=receiver)
+        new_thread.save()
+        t = Thread.objects.get_by_user(user=sender).prefetch_related('message_thread')
+        print("2....")
+        context = {
+            'username':username,
+            'sender':sender.username,
+            'thread_id':t.first().id,
+            'thread':t
+        }
+
+    serializer = ThreadSerializer(context)
+    return Response(serializer.data)
+
+
+class UserProfileView(APIView):
+  permission_classes = [AllowAny]
+  def get(self, request, format=None):
+    serializer = UserProfileSerializer(request.user)
+    return Response(serializer.data, status=status.HTTP_200_OK)
