@@ -60,7 +60,7 @@ export const AuthProvider = ({children}) => {
                 'X-CSRFToken':csrftoken,
                 'Content-Type':"application/json",
             },
-            body: JSON.stringify({username:event.target.username.value, email:event.target.email.value, password:event.target.password.value})
+            body: JSON.stringify({email:event.target.email.value,username:event.target.username.value, password:event.target.password.value})
         })
         console.log("user signuped");
         let response = await fetch("http://127.0.0.1:8000/token/",{

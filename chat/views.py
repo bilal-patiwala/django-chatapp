@@ -1,18 +1,23 @@
 from django.shortcuts import redirect, render
-from django.contrib.auth.models import User
+from .models import User
 from django.contrib import messages
 from django.contrib.auth import authenticate, login, logout
 from .models import Message, Thread
 from rest_framework.decorators import api_view, permission_classes, authentication_classes
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from rest_framework_simplejwt.views import TokenObtainPairView
-from .serializers import RegisterSerializer, SearchSerializer, ThreadSerializer, UserProfileSerializer
+from .serializers import RegisterSerializer, SearchSerializer, ThreadSerializer, UserProfileSerializer, MessageSerializer
 from rest_framework.response import Response
 from rest_framework import status
 from django.contrib.auth import get_user_model
 from rest_framework_simplejwt.authentication import JWTAuthentication, default_user_authentication_rule
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.views import APIView
+from rest_framework_simplejwt.serializers import TokenVerifySerializer
+from rest_framework.settings import api_settings
+from rest_framework_simplejwt.backends import TokenBackend
+from rest_framework.exceptions import ValidationError
+from rest_framework_simplejwt.tokens import AccessToken, RefreshToken
 User = get_user_model()
 
 
@@ -24,7 +29,6 @@ class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
 
         # Add custom claims
         token['username'] = user.username
-        token['USER_ID_FIELD'] = user.id
         # ...
 
         return token
@@ -38,9 +42,13 @@ def index(request):
 
 
 @api_view(['POST'])
+@permission_classes([AllowAny])
 def register(request):
     data = request.data
+    print(data)
     serializer = RegisterSerializer(data=data)
+    print(serializer.is_valid())
+    print(serializer)
     if serializer.is_valid():
         serializer.save()
         return Response(serializer.data, status=status.HTTP_201_CREATED)
@@ -107,37 +115,44 @@ def searchUser(request, searchText):
     serializer = SearchSerializer(querySet, many=True)
     return Response(serializer.data)
 
-@api_view(['GET'])
-@permission_classes((AllowAny, ))
-def getThread(request, username):
-    token = request.headers.get('AUTHORIZATION').split()
-    print(token[1])
-    sender = JWTAuthentication.get_user(JWTAuthentication,token[1])
-    print(sender)
-    thread = Thread.objects.get_by_user(user=sender).prefetch_related('message_thread')
-    receiver = User.objects.get(username=username)
-    if thread.exists():
-        context = {
-            'username':username,
-            'sender':sender.username,
-            'thread_id':thread.first().id,
-            'thread':thread
-        }
-    else:
-        print("1..")
-        new_thread = Thread.objects.create(sender=sender, receiver=receiver)
-        new_thread.save()
-        t = Thread.objects.get_by_user(user=sender).prefetch_related('message_thread')
-        print("2....")
-        context = {
-            'username':username,
-            'sender':sender.username,
-            'thread_id':t.first().id,
-            'thread':t
-        }
+class GetThread(APIView):
+    permission_classes = (AllowAny, )
+    authentication_classes = (JWTAuthentication, )
+    def get(self, request, username):
+        t1 = request.headers.get('Authorization').split()
+        t = t1[1].split('}')
+        print(t[0])
+        access_token_obj = RefreshToken(t[0], verify=True)
+        u=access_token_obj['username']
+        sender=User.objects.get(username=u)
+        s=sender
+        receiver = User.objects.get(username=username)
+        print(sender)
+        thread = Thread.objects.get_by_user(user=sender).prefetch_related('message_thread')
+        print(thread.first().receiver)
+        if thread.exists():
+            print("exist")
+            context = {
+                'sender':sender,
+                'receiver':receiver,
+                'id':thread.first().id,
+            }
+        else:
+            print("not exist")
+            new_thread = Thread.objects.create(sender=sender, receiver=receiver)
+            new_thread.save()
+            th = Thread.objects.get_by_user(user=sender).prefetch_related('message_thread')
+            context = {
+                'sender':sender,
+                'receiver':receiver,
+                'id':th.first().id,
+            }
 
-    serializer = ThreadSerializer(context)
-    return Response(serializer.data)
+        print(context)
+        print("okk..")
+        serializer = ThreadSerializer(context)
+        print("okk...1")
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
 
 
 class UserProfileView(APIView):
@@ -145,3 +160,39 @@ class UserProfileView(APIView):
   def get(self, request, format=None):
     serializer = UserProfileSerializer(request.user)
     return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+class GetMessages(APIView):
+    permission_classes = (AllowAny, )
+    authentication_classes = (JWTAuthentication, )
+    def get(self, request):
+        print("hello")
+        print(request)
+        t1 = request.headers.get('Authorization').split()
+        print("hello")
+        t = t1[1].split('}')
+        print(t[0])
+        access_token_obj = RefreshToken(t[0], verify=True)
+        u=access_token_obj['username']
+        sender=User.objects.get(username=u)
+        print(sender.id)
+        messages = Message.objects.filter(user=sender)
+        print("............here come thread id ...............")
+        print(messages.first().thread.id)
+        allMessages = Message.objects.filter(thread=messages.first().thread)
+        serializer = MessageSerializer(allMessages, many=True)
+        return Response(serializer.data)
+    
+class GetAllUserAlreadyHasConv(APIView):
+    permission_classes = (AllowAny, )
+    authentication_classes = (JWTAuthentication, )
+    def get(self, request):
+        t1 = request.headers.get('Authorization').split()
+        print("hello")
+        t = t1[1].split('}')
+        print(t[0])
+        access_token_obj = RefreshToken(t[0], verify=True)
+        u=access_token_obj['username']
+        sender=User.objects.get(username=u)
+        
+

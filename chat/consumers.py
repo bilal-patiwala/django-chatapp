@@ -1,22 +1,28 @@
 import json
 
 from asgiref.sync import async_to_sync
-from channels.generic.websocket import AsyncWebsocketConsumer
+from channels.generic.websocket import AsyncWebsocketConsumer, AsyncJsonWebsocketConsumer, JsonWebsocketConsumer
 from channels.db import database_sync_to_async
-from django.contrib.auth import get_user_model
+from .models import User
 from .models import Thread, Message
+from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework.permissions import AllowAny, IsAuthenticated
 
-User = get_user_model()
 
-class ChatConsumer(AsyncWebsocketConsumer):
+class ChatConsumer(AsyncJsonWebsocketConsumer):
     async def connect(self):
+        print("opened")
         user  = self.scope['user']
+        print("got user")
+        print(user)
         chat_room = f'chat_room{user.id}'
         self.chat_room = chat_room
         await self.channel_layer.group_add(self.chat_room, self.channel_name)
         await self.accept()
+        print("accept")
 
     async def receive(self, text_data=None):
+        print("hello receive")
         received_data = json.loads(text_data)
         message = received_data['message']
         sender_username = received_data['sender']

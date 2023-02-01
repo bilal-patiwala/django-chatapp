@@ -29,12 +29,27 @@
     align-items: center;
 }
 
-.footer{
+.chat-log{
+    /* height: calc(100v - 40px); */
+    height: 630px;
+    padding: 10px;
+    padding-bottom: 0;
+    overflow-y: scroll;
     width: 100%;
-    position: fixed;
+}
+
+.chat-log::-webkit-scrollbar{
+    display: none;
+}
+
+.footer{
+    height: 40px;
+    width: 100%;
+    position: absolute;
     bottom: 0;
     display: flex;
     gap: 15px;
+    margin-bottom: 10px;
 }
 
 .chat-input-bar{
@@ -54,3 +69,29 @@
     margin: auto;
 
 }
+
+.sender-logs{
+    text-align: right;
+    justify-content: right;
+    max-width: 60%;
+    margin-left: auto;
+    background-color: #343A46;
+    border-radius: 5px;
+    padding: 5px 10px;
+    margin-bottom: 10px;
+    width: fit-content;
+    overflow-wrap: break-word;
+}
+.receive-logs{
+    text-align: left;
+    justify-content: left;
+    max-width: 60%;
+    background-color: #343A46;
+    border-radius: 5px;
+    padding:5px 10px;
+    margin-bottom: 10px;
+    width: fit-content;
+    overflow-wrap: break-word;
+}
+
+/* hello boy! hope you are doing fine these days when every thing you see look loke blur and nothing making sense what is happening around me */

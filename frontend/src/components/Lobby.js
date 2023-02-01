@@ -23,7 +23,7 @@ const Lobby = () => {
         let response = await fetch(`http://127.0.0.1:8000/searchUser/${search}`,{
             method:'GET',
             headers:{
-              'AUTHORIZATION':`Bearer ${localStorage.getItem('authToken')}`,
+              'Authorization':`Bearer ${localStorage.getItem('authToken')}`,
             }
         })
 
